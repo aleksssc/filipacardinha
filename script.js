@@ -32,30 +32,77 @@ menuToggle?.addEventListener('click', () => {
   menuToggle.setAttribute('aria-expanded', String(open));
 });
 
+// O indicador é uma única cápsula animada: segue a secção ativa e antecipa o hover.
+let activeSectionId = 'inicio';
+let navHoveredLink = null;
+let scrollFrame = 0;
+let scrollLockUntil = 0;
+
 function moveIndicator(link) {
-  if (!indicator || window.innerWidth <= 820 || !link) return;
+  if (!indicator || !nav || !link || window.innerWidth <= 820) return;
   const navRect = nav.getBoundingClientRect();
   const linkRect = link.getBoundingClientRect();
   indicator.style.width = `${linkRect.width}px`;
-  indicator.style.transform = `translateX(${linkRect.left - navRect.left - 4}px)`;
+  indicator.style.transform = `translate3d(${linkRect.left - navRect.left - 4}px, 0, 0)`;
 }
 
-function setActiveSection(id) {
-  navLinks.forEach((link) => link.classList.toggle('active', link.dataset.section === id));
-  moveIndicator(navLinks.find((link) => link.dataset.section === id));
-  const section = document.getElementById(id);
-  header?.classList.toggle('is-green', section?.dataset.theme === 'green');
+function paintNav() {
+  const selected = navHoveredLink || navLinks.find(link => link.dataset.section === activeSectionId);
+  navLinks.forEach(link => {
+    const selectedHere = link === selected;
+    link.classList.toggle('active', selectedHere);
+    if (link.dataset.section === activeSectionId) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  });
+  moveIndicator(selected);
+  header?.classList.toggle('is-green', document.getElementById(activeSectionId)?.dataset.theme === 'green');
 }
 
-// Scroll spy tuned around the middle of the viewport.
-const spy = new IntersectionObserver((entries) => {
-  const visible = entries
-    .filter((entry) => entry.isIntersecting)
-    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-  if (visible) setActiveSection(visible.target.id);
-}, { rootMargin: '-32% 0px -52% 0px', threshold: [0, .2, .5, .8] });
+// Segue o rato e regressa à secção atual quando sai do menu.
+navLinks.forEach(link => {
+  link.addEventListener('pointerenter', event => {
+    if (event.pointerType === 'touch' || window.innerWidth <= 820) return;
+    navHoveredLink = link;
+    paintNav();
+  });
+  link.addEventListener('focus', () => {
+    if (window.innerWidth > 820) { navHoveredLink = link; paintNav(); }
+  });
+  link.addEventListener('blur', () => {
+    navHoveredLink = null;
+    paintNav();
+  });
+  link.addEventListener('click', () => {
+    activeSectionId = link.dataset.section;
+    navHoveredLink = null;
+    scrollLockUntil = performance.now() + 850;
+    paintNav();
+  });
+});
+nav?.addEventListener('pointerleave', () => { navHoveredLink = null; paintNav(); });
 
-sections.forEach((section) => spy.observe(section));
+// Um único cálculo por frame evita saltos na transição ao fazer scroll.
+function updateActiveFromScroll() {
+  scrollFrame = 0;
+  if (performance.now() < scrollLockUntil) return;
+  const checkY = Math.min(window.innerHeight * .38, 340);
+  let current = sections[0];
+  for (const section of sections) {
+    if (section.getBoundingClientRect().top <= checkY) current = section;
+    else break;
+  }
+  if (current && current.id !== activeSectionId) {
+    activeSectionId = current.id;
+    paintNav();
+  }
+}
+window.addEventListener('scroll', () => {
+  if (!scrollFrame) scrollFrame = requestAnimationFrame(updateActiveFromScroll);
+}, { passive: true });
+window.addEventListener('resize', () => {
+  updateActiveFromScroll();
+  paintNav();
+});
 
 // Reveal animations
 const revealObserver = new IntersectionObserver((entries, observer) => {
@@ -118,12 +165,8 @@ if (canTilt) {
   });
 }
 
-window.addEventListener('resize', () => {
-  const active = document.querySelector('.nav-link.active');
-  moveIndicator(active);
-});
-
 window.addEventListener('load', () => {
-  moveIndicator(document.querySelector('.nav-link.active'));
+  updateActiveFromScroll();
+  paintNav();
   document.querySelectorAll('.hero .reveal').forEach((el) => el.classList.add('is-visible'));
 });
