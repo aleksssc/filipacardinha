@@ -23,3 +23,5 @@ Links configurados:
 
 Abrir localmente:
 Basta abrir index.html no browser. Para desenvolvimento, recomenda-se um servidor simples (ex.: VS Code Live Server).
+
+CAPA DO LIVRO: assets/books/de_ferias_marcadas.jpg contém um recorte temporário da captura de ecrã. Substitui-o pelo JPG original da capa para máxima qualidade.

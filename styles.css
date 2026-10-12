@@ -313,3 +313,36 @@ h1 em, h2 em, .footer-brand em { color: var(--green); font-weight: 500; }
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   .reveal { opacity:1; transform:none; }
 }
+
+/* Capa oficial — mantém a grelha original e o efeito 3D */
+.book-layout { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+.book-art-wrap { min-width: 0; min-height: clamp(440px, 42vw, 600px); }
+.book-image {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 345px);
+  margin: 0 auto;
+  transform: rotate(-4deg);
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 30px 38px rgba(0, 0, 0, .32));
+  transition: transform .18s ease-out;
+}
+.book-cover-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 3px 7px 7px 3px;
+  border-left: 5px solid rgba(18, 33, 23, .35);
+}
+.book-shadow { width: min(80%, 360px); }
+.book-copy { min-width: 0; }
+@media (max-width: 820px) {
+  .book-layout { grid-template-columns: 1fr; gap: 28px; }
+  .book-art-wrap { order: 2; min-height: 480px; }
+  .book-copy { order: 1; }
+  .book-image { width: min(100%, 310px); }
+}
+@media (max-width: 560px) {
+  .book-art-wrap { min-height: 400px; }
+  .book-image { width: min(78vw, 265px); }
+}
